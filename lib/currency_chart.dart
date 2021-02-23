@@ -11,9 +11,10 @@ class CurrencyChart extends StatelessWidget{
       dataCurrencyExemple[i] = Random().nextInt(70).toDouble();
       print(dataCurrencyExemple[i]);
     };
+    List<double> dataCurrencyExemple2 = [30, 70];
     // TODO: implement build
     return CustomPaint(
-      painter: CurrencyChartPainter(dataCurrencyExemple),
+      painter: CurrencyChartPainter(dataCurrencyExemple2),
       child: Container(),
     );
   }
@@ -25,25 +26,25 @@ class CurrencyChartPainter extends CustomPainter{
 
 
   final double stepChart = 8;
-  double _halfWay;
-  double _endHalfWay;
-  bool _clockwise;
+  Offset startFirstArc;
+  Offset endFirstArc;
+  Offset startSecondArc;
+  Offset endSecondArc;
+  double oddsPoints;
 
   CurrencyChartPainter(this.dataCurrency);
 
   void _addPartCurrencyPath(Path path, double stepChart, double positionCurrency,
       double lastPositionCurrency){
-    //path.lineTo(stepChart, positionCurrency);
-    _halfWay = (positionCurrency - lastPositionCurrency).abs();
+    oddsPoints  = positionCurrency - lastPositionCurrency;
+    startFirstArc = Offset(stepChart - this.stepChart, lastPositionCurrency);
+    endFirstArc = Offset(stepChart - this.stepChart/2, lastPositionCurrency + oddsPoints/4);
+    startSecondArc = Offset(stepChart + this.stepChart/2, positionCurrency - oddsPoints/4);
+    endSecondArc = Offset(stepChart + this.stepChart, positionCurrency);
 
-    if(positionCurrency>lastPositionCurrency) _endHalfWay = lastPositionCurrency + _halfWay;
-    else _endHalfWay = lastPositionCurrency - _halfWay;
-
-    if(positionCurrency>lastPositionCurrency) _clockwise = false;
-    else _clockwise = true;
-
-    path.arcToPoint(Offset(stepChart, _endHalfWay), radius: Radius.circular(stepChart), clockwise: _clockwise);
-    path.arcToPoint(Offset(stepChart, positionCurrency), radius: Radius.circular(stepChart), clockwise: !_clockwise);
+    path.arcTo(Rect.fromPoints(startFirstArc, endFirstArc), 1.5 * pi, 0.5 * pi, false);
+    path.lineTo(startSecondArc.dx, startSecondArc.dy);
+    path.arcTo(Rect.fromPoints(endSecondArc, startSecondArc), 1 * pi, 0 * pi, false);
   }
 
   @override
@@ -51,16 +52,14 @@ class CurrencyChartPainter extends CustomPainter{
     // TODO: implement paint
     var paint = Paint()
         ..color = Colors.black
-        ..strokeWidth = 4
+        ..strokeWidth = 2
         ..style = PaintingStyle.stroke;
 
     var path = Path()
        ..moveTo(0, dataCurrency[0]);
 
     for(int i = 1; i < dataCurrency.length; i++){
-
-      
-      _addPartCurrencyPath(path, i*stepChart  + stepChart, dataCurrency[i],
+      _addPartCurrencyPath(path, i*stepChart, dataCurrency[i],
           dataCurrency[i-1]);
     }
 
