@@ -528,6 +528,7 @@ class LitecoinSection extends StatelessWidget{
             ),
             Container(
               height: 100,
+              padding: EdgeInsets.only(top: 20),
               child: CurrencyChart(),
             ),
             Padding(
