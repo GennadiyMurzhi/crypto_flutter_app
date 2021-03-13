@@ -1,55 +1,56 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+
 class CurrencyChart extends StatelessWidget{
+  // TODO: implement build
+  double _centerHeightChart;
 
   @override
   Widget build(BuildContext context) {
-    List<double> dataCurrencyExemple = List(30);
+    List<double> dataCurrencyExemple = List(20);
     for(int i = 0; i < dataCurrencyExemple.length; i++){
       dataCurrencyExemple[i] = Random().nextInt(70).toDouble();
     }
     print(dataCurrencyExemple);
-    // TODO: implement build
+    _centerHeightChart =
+        (dataCurrencyExemple.reduce(max) + dataCurrencyExemple.reduce(min)) / 2;
+
     return Stack(
       children: [
-        Container(
-          height: 100,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.purpleAccent[700],
-                Colors.purple[50]
-              ]
-            )
-          ),
+        CustomPaint(
+          painter: CurrencyChartPainter(_centerHeightChart, dataCurrencyExemple),
+          child: Container(),
         ),
-        Positioned(
-          child: ClipPath(
-            child: Container(color: Colors.white),
-            clipper: GeneralClipper(true, dataCurrencyExemple),
+        ClipPath(
+          clipper: GradientClipper(dataCurrencyExemple.reduce(max), dataCurrencyExemple),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.fromRGBO(33, 30, 255, 0.3),
+                  Color.fromRGBO(255, 255, 255, 0)
+                ]
+              )
+            ),
           ),
-        ),
-        Positioned(
-          child: ClipPath(
-            child: Container(height: 100, color: Colors.black,),
-            clipper: GeneralClipper(false, dataCurrencyExemple),
-          ),
-        ),
-      ],
+        )
+      ]
     );
   }
 
 }
 
-class GeneralClipper extends CustomClipper<Path>{
-  final bool isFirstPart;
-  final List<double> dataCurrency;
-  double _correction = 3;
+class MakeCurrencyPath {
+  final List<double> _dataCurrency;
+  final double _widthContainer;
+
+  var _path = Path();
 
   double _stepChart;
   Offset _startFirstArc;
@@ -58,14 +59,26 @@ class GeneralClipper extends CustomClipper<Path>{
   Offset _endSecondArc;
   double _oddsPoints;
   bool _clockwiseArc;
-  Radius _radiusFirst;
-  Radius _radiusSecond;
 
+  MakeCurrencyPath(this._dataCurrency, this._widthContainer) {
 
-  GeneralClipper(this.isFirstPart, this.dataCurrency){
-    _correction = isFirstPart ? -_correction : _correction;
-    print(_correction);
+    _stepChart = _widthContainer/(_dataCurrency.length-1);
+    _path.moveTo(0, _dataCurrency[0]);
+
+    for (int i = 1; i < _dataCurrency.length; i++) {
+      if (_dataCurrency[i] == _dataCurrency[i - 1])
+        _path.lineTo(i * _stepChart, _dataCurrency[i]);
+      else if (i == _dataCurrency.length - 1)
+        _addPartCurrencyPath(
+            _path, i * _stepChart, _dataCurrency[i], _dataCurrency[i - 1]);
+      else
+        _addPartCurrencyPath(
+            _path, i * _stepChart, _dataCurrency[i], _dataCurrency[i - 1],
+            futurePositionCurrency: _dataCurrency[i + 1]);
+    }
   }
+
+  Path get currencyPath => _path;
 
   void _addPartCurrencyPath(Path path, double stepChart, double positionCurrency,
       double lastPositionCurrency, {double futurePositionCurrency}){
@@ -75,130 +88,100 @@ class GeneralClipper extends CustomClipper<Path>{
     _endFirstArc = Offset(stepChart - this._stepChart/2, lastPositionCurrency + _oddsPoints/6);
     _startSecondArc = Offset(stepChart - this._stepChart/2, positionCurrency - _oddsPoints/6);
     _endSecondArc = Offset(stepChart, positionCurrency);
-    _radiusFirst = Radius.circular(_oddsPoints/8);
-    _radiusSecond = Radius.circular(_oddsPoints/2);
 
     if(futurePositionCurrency == null) path.arcToPoint(_endFirstArc,
         radius: Radius.circular(_oddsPoints/4), clockwise: _clockwiseArc);
     else if(positionCurrency > futurePositionCurrency)
-      path.arcToPoint(_endFirstArc, radius: _radiusFirst, clockwise: _clockwiseArc);
-    else path.arcToPoint(_endFirstArc, radius: _radiusSecond, clockwise: _clockwiseArc);
+      path.arcToPoint(_endFirstArc, radius: Radius.circular(_oddsPoints/4), clockwise: _clockwiseArc);
+    else path.arcToPoint(_endFirstArc, radius: Radius.circular(_oddsPoints/4), clockwise: _clockwiseArc);
     path.lineTo(_startSecondArc.dx, _startSecondArc.dy);
     if(futurePositionCurrency == null) path.arcToPoint(_endSecondArc,
-        radius: Radius.circular(_oddsPoints/4), clockwise: !_clockwiseArc);
+        radius: Radius.circular(_oddsPoints/2), clockwise: !_clockwiseArc);
     else if(positionCurrency > futurePositionCurrency)
-      path.arcToPoint(_endSecondArc, radius: _radiusFirst, clockwise: !_clockwiseArc);
-    else path.arcToPoint(_endSecondArc, radius: _radiusSecond, clockwise: !_clockwiseArc);
-  }
-
-  @override
-  Path getClip(Size size) {
-    // TODO: implement getClip
-    this._stepChart = size.width / (dataCurrency.length-1);
-
-    var path = Path();
-
-    isFirstPart ? path.moveTo(0, 0) : path.moveTo(0, size.height);
-    path.lineTo(0, dataCurrency[0] + _correction);
-
-    for (int i = 1; i < dataCurrency.length; i++) {
-      if (dataCurrency[i] == dataCurrency[i - 1])
-        path.lineTo(i * _stepChart, dataCurrency[i] + _correction);
-      else if (i == dataCurrency.length - 1)
-        _addPartCurrencyPath(path, i * _stepChart,
-            dataCurrency[i] + _correction, dataCurrency[i - 1] + _correction);
-      else
-        _addPartCurrencyPath(path, i * _stepChart,
-            dataCurrency[i] + _correction, dataCurrency[i - 1] + _correction,
-            futurePositionCurrency: dataCurrency[i + 1] + _correction);
-    }
-
-    if(isFirstPart == true){
-      path.lineTo(size.width, 0);
-      path.lineTo(0, 0);
-    } else {
-      path.lineTo(size.width, size.height);
-      path.moveTo(0, size.height);
-    }
-
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
-    // TODO: implement shouldReclip
-    return false;
+      path.arcToPoint(_endSecondArc, radius: Radius.circular(_oddsPoints/4), clockwise: !_clockwiseArc);
+    else path.arcToPoint(_endSecondArc, radius: Radius.circular(_oddsPoints/4), clockwise: !_clockwiseArc);
   }
 
 }
 
 class CurrencyChartPainter extends CustomPainter{
-  final List<double> dataCurrency;
+  final double centerHeightChart;
+  final List dataCurrency;
+  Path _currencyPath;
 
-
-  double stepChart = null;
-  Offset startFirstArc;
-  Offset endFirstArc;
-  Offset startSecondArc;
-  Offset endSecondArc;
-  double oddsPoints;
-  bool clockwiseArc;
-
-  CurrencyChartPainter(this.dataCurrency);
-
-  void _addPartCurrencyPath(Path path, double stepChart, double positionCurrency,
-      double lastPositionCurrency, {double futurePositionCurrency}){
-    oddsPoints  = positionCurrency - lastPositionCurrency;
-    if(oddsPoints>0) clockwiseArc = true; else clockwiseArc = false;
-    startFirstArc = Offset(stepChart - this.stepChart, lastPositionCurrency);
-    endFirstArc = Offset(stepChart - this.stepChart/2, lastPositionCurrency + oddsPoints/6);
-    startSecondArc = Offset(stepChart - this.stepChart/2, positionCurrency - oddsPoints/6);
-    endSecondArc = Offset(stepChart, positionCurrency);
-    
-    if(futurePositionCurrency == null) path.arcToPoint(endFirstArc,
-        radius: Radius.circular(oddsPoints/4), clockwise: clockwiseArc);
-    else if(positionCurrency > futurePositionCurrency)
-      path.arcToPoint(endFirstArc, radius: Radius.circular(oddsPoints/8), clockwise: clockwiseArc);
-    else path.arcToPoint(endFirstArc, radius: Radius.circular(oddsPoints/2), clockwise: clockwiseArc);
-    path.lineTo(startSecondArc.dx, startSecondArc.dy);
-    if(futurePositionCurrency == null) path.arcToPoint(endSecondArc,
-        radius: Radius.circular(oddsPoints/4), clockwise: !clockwiseArc);
-    else if(positionCurrency > futurePositionCurrency)
-      path.arcToPoint(endSecondArc, radius: Radius.circular(oddsPoints/8), clockwise: !clockwiseArc);
-    else path.arcToPoint(endSecondArc, radius: Radius.circular(oddsPoints/2), clockwise: !clockwiseArc);
-  }
+  CurrencyChartPainter(this.centerHeightChart, this.dataCurrency);
 
   @override
   void paint(Canvas canvas, Size size) {
-    this.stepChart = size.width / (dataCurrency.length-1);
     // TODO: implement paint
     var paint = Paint()
-        ..color = Colors.black
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke;
+        ..strokeWidth = 4
+        ..style = PaintingStyle.stroke
+        ..shader = ui.Gradient.linear(
+          Offset(size.width/2,0),
+          Offset(size.width/2, size.height),
+            [
+              Color.fromRGBO(255, 25, 233, 1),
+              Color.fromRGBO(33, 30, 255, 1)
+            ]
+        );
 
-    var path = Path()
-       ..moveTo(0, dataCurrency[0]);
-
-    for(int i = 1; i < dataCurrency.length; i++){
-      if(dataCurrency[i] == dataCurrency[i-1]) path.lineTo(i*stepChart,
-          dataCurrency[i]);
-      else if(i == dataCurrency.length-1) _addPartCurrencyPath(path, i*stepChart,
-          dataCurrency[i], dataCurrency[i-1]);
-      else _addPartCurrencyPath(path, i*stepChart, dataCurrency[i],
-            dataCurrency[i-1],  futurePositionCurrency: dataCurrency[i+1]);
-    }
-
-
-    canvas.drawPath(path, paint);
-
+    _currencyPath = MakeCurrencyPath(dataCurrency, size.width).currencyPath;
+    canvas.drawPath(_currencyPath, paint);
     canvas.save();
     canvas.restore();
+
+    _currencyPath.reset();
+
+    paint = Paint()
+      ..color = Colors.grey.withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+
+    double partLineLength = size.width/100;
+    double lineLength = 0;
+
+    while(lineLength <= size.width){
+      _currencyPath.moveTo(lineLength, centerHeightChart);
+      _currencyPath.lineTo(lineLength + partLineLength, centerHeightChart);
+      lineLength += (partLineLength + size.width/800) * 4;
+    }
+
+    canvas.drawPath(_currencyPath, paint);
+    canvas.save();
+    canvas.restore();
+
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     // TODO: implement shouldRepaint
     return false;
+  }
+}
+
+
+class GradientClipper extends CustomClipper<Path>{
+  final List dataCurrency;
+  final double maxData;
+  Path _currencyPath;
+
+  GradientClipper(this.maxData, this.dataCurrency);
+
+  @override
+  Path getClip(Size size) {
+    // TODO: implement getClip
+    _currencyPath = MakeCurrencyPath(dataCurrency, size.width).currencyPath;
+    _currencyPath.lineTo(size.width, maxData);
+    _currencyPath.lineTo(0, maxData);
+    _currencyPath.close();
+
+    return _currencyPath;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper oldClipper) {
+    // TODO: implement shouldReclip
+    return true;
   }
 }

@@ -1,5 +1,7 @@
 
 
+import 'dart:math';
+
 import 'package:crypto_flutter_app/crypto_app_icons_icons.dart';
 import 'package:crypto_flutter_app/currency_chart.dart';
 import 'package:crypto_flutter_app/logo.dart';
@@ -528,6 +530,7 @@ class LitecoinSection extends StatelessWidget{
             ),
             Container(
               height: 100,
+              width: double.maxFinite,
               padding: EdgeInsets.only(top: 20),
               child: CurrencyChart(),
             ),
@@ -580,7 +583,9 @@ class LitecoinSection extends StatelessWidget{
                                   ),
                                 )
                               ],
-                            )
+                            ),
+                            SizedBox(width: 15,),
+                            CircleProgress(48)
                           ],
                         ),
                       )
@@ -592,5 +597,77 @@ class LitecoinSection extends StatelessWidget{
         ),
       ),
     );
+  }
+}
+
+class CircleProgress extends StatelessWidget{
+  final double percent;
+
+  CircleProgress(this.percent);
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Stack(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.grey,
+              width: 2
+            ),
+            shape: BoxShape.circle
+          ),
+        ),
+        CustomPaint(
+          painter: CircleProgressPainter(percent),
+          child: Container(
+            width: 30,
+            height: 30,
+          ),
+        ),
+      ],
+    );
+  }
+
+
+}
+
+class CircleProgressPainter extends CustomPainter{
+  final double percent;
+
+  CircleProgressPainter(this.percent);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // TODO: implement paint
+    var paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..color = Colors.lightBlue[800];
+
+    var path = Path()
+      ..moveTo(size.width/2, size.height);
+
+    path.addArc(
+        Rect.fromCenter(
+            center: Offset(size.width/2, size.height/2),
+            width: size.width,
+            height: size.height
+        ),
+        1.5*pi,
+        2 * pi / 100 * percent
+    );
+    canvas.drawPath(path, paint);
+    canvas.save();
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    // TODO: implement shouldRepaint
+    return false;
   }
 }
