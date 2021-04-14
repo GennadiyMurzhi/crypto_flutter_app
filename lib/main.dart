@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:crypto_flutter_app/Traders_screen.dart';
+import 'package:crypto_flutter_app/crypto_camp_screen.dart';
 import 'package:crypto_flutter_app/dashboard_screen.dart';
 import 'package:crypto_flutter_app/password_recovery_screen.dart';
 import 'package:crypto_flutter_app/select_country_screen.dart';
@@ -18,20 +20,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         backgroundColor: Color.fromRGBO(245, 245, 245, 1),
       ),
-      initialRoute: isAuthorized ? "/" : "/select_country",
+      initialRoute: isAuthorized ? "/traders" : "/select_country",
       routes: {
         "/" : (context) => DashboardScreen(),
         "/select_country" : (context) => SelectCountryScreen(),
         "/sign_in" : (context) => SignInScreen(),
         "/sing_up" : (context) => SingUpScreen(),
         "/password_recovery_screen" : (context) => PasswordRecoveryScreen(),
+        "/crypto_camp" : (context) => CryptoCampScreen(),
+        "/traders" : (context) => TradersScreen()
       },
     );
   }

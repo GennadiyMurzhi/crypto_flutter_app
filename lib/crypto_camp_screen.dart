@@ -6,56 +6,197 @@ import 'SizingTool.dart';
 
 class CryptoCampScreen extends StatelessWidget{
 
+  String userName = "Aurelijus Yen";
+  DateTime lastLoggedDate = DateTime(2021,3,14);
+
+  List<CryptoCampItem> menuItems = [
+    CryptoCampItem("Dashboard", "/", 0),
+    CryptoCampItem("Buy/Sell", "/buy_sell", 0),
+    CryptoCampItem("Traders", "/traders", 0),
+    CryptoCampItem("My Wallets", "/my_wallets", 5),
+    CryptoCampItem("Orders", "/orders", 0),
+    CryptoCampItem("Converter", "/converter", 0),
+  ];
+
   TextStyle style = TextStyle(
     color: Colors.white,
-    fontSize: 24,
-    letterSpacing: -5,
+    fontSize: 30,
+    letterSpacing: -1,
     fontWeight: FontWeight.bold
   );
 
   @override
   Widget build(BuildContext context) {
+
     // TODO: implement build
     return Scaffold(
       backgroundColor: Color.fromRGBO(1, 45, 94, 1),
       body: Stack(
         children: [
+          CustomPaint(
+            painter: CryptoCampBackgroundPainter(),
+            child: Container(),
+          ),
           Padding(
-            padding: EdgeInsets.symmetric(vertical: 45, horizontal: 25),
+            padding: EdgeInsets.fromLTRB(30, 50, 20, 40),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text("CryptoCamp", style: style),
-                    Expanded(),
-                    ElevatedButton(
-                      onPressed: (){},
-                      child: Icon(
-                        Icons.close,
-                        size: 24,
+                    Spacer(),
+                    Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: ElevatedButton(
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all<Color>
+                            (Color.fromRGBO(0, 0, 0, 0)),
+                          overlayColor: MaterialStateProperty.all<Color>
+                            (Color.fromRGBO(1, 65, 112, 1)),
+                          foregroundColor: MaterialStateProperty.all<Color>
+                            (Color.fromRGBO(0, 210, 231, 1)),
+                          shadowColor: MaterialStateProperty.all<Color>
+                            (Color.fromRGBO(0, 0, 0, 0)),
+                          shape: MaterialStateProperty.all<OutlinedBorder>
+                            (CircleBorder()),
+                          minimumSize: MaterialStateProperty.all<Size>
+                            (Size.fromRadius(25)),
+                        ),
+                        onPressed: (){
+                          Navigator.pop(context);
+                        },
+                        child: Icon(
+                          Icons.close,
+                          size: 35,
+                        ),
                       ),
                     )
                   ],
                 ),
-                SizedBox(height: 120,),
-                MenuItem(
-                  titleItem: "",
-                  routeName: "",
-                  styleItem: style,
-                  countEvent: 0,
+                SizedBox(height: 60,),
+                SizedBox(
+                  height: 347,
+                  child: ListView.separated(
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: 6,
+                    separatorBuilder: (context, _) => SizedBox(height: 17,),
+                    itemBuilder: (context, index){
+                      if(menuItems[index]._countEvent > 0)
+                        return MenuItemNotify(
+                              titleItem: menuItems[index]._titleItem,
+                              routeName: menuItems[index]._routeName,
+                              styleItem: style,
+                              countEvent: menuItems[index]._countEvent
+                          );
+                      else return MenuItem(
+                        titleItem: menuItems[index]._titleItem,
+                        routeName: menuItems[index]._routeName,
+                        styleItem: style,
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 80,),
+                UserSection(userName: userName, lastLoggedDate: lastLoggedDate,),
+                SizedBox(height: 40,),
+                Text(
+                  "CryptoCamp UI KIT\n© 2021 All rights reserved",
+                  style: TextStyle(
+                    color: Color.fromRGBO(69, 100, 134, 1),
+                    fontSize: 11
+                  ),
                 )
               ],
             ),
-          ),
-          CustomPaint(
-            painter: CryptoCampBackgroundPainter(),
-            child: Container(),
           ),
         ],
       ),
     );
   }
   
+}
+
+class MenuItem extends StatelessWidget{
+  final String routeName;
+  final String titleItem;
+  final TextStyle styleItem;
+
+  const MenuItem({Key key, this.routeName, this.titleItem, this.styleItem}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Padding(
+      padding: EdgeInsets.only(top: 3),
+      child: RichText(
+        text: TextSpan(
+          text: titleItem,
+          style: styleItem,
+          recognizer: TapGestureRecognizer()
+            ..onTap = () {
+              Navigator.pushNamed(context, routeName);
+            },
+        ),
+      ),
+    );
+  }
+
+}
+
+class MenuItemNotify extends StatefulWidget{
+  final String routeName;
+  final String titleItem;
+  final TextStyle styleItem;
+  final int countEvent;
+
+  const MenuItemNotify({Key key, this.routeName, this.titleItem, this.styleItem, this.countEvent}) : super(key: key);
+  @override
+  _MenuItemNotifyState createState() => _MenuItemNotifyState(routeName, titleItem, styleItem, countEvent);
+}
+
+class _MenuItemNotifyState extends State<MenuItemNotify>{
+  final String routeName;
+  final String titleItem;
+  final TextStyle styleItem;
+  final int countEvent;
+
+  _MenuItemNotifyState(this.routeName, this.titleItem, this.styleItem, this.countEvent);
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Stack(children: [
+      MenuItem(
+        routeName: routeName,
+        titleItem: titleItem,
+        styleItem: styleItem,
+      ),
+      Positioned(
+        left: 142,
+        bottom: 23,
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 1, horizontal: 7),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(5)),
+              color: Color.fromRGBO(0, 215, 235, 1)),
+          child: Text(
+            countEvent.toString(),
+            style: TextStyle(
+                fontSize: 14, color: Colors.white, fontWeight: FontWeight.w900),
+          ),
+        ),
+      )
+    ]);
+  }
+}
+
+class CryptoCampItem {
+  String _titleItem;
+  String _routeName;
+  int _countEvent;
+
+  CryptoCampItem(this._titleItem, this._routeName, this._countEvent);
 }
 
 class CryptoCampBackgroundPainter extends CustomPainter{
@@ -76,11 +217,11 @@ class CryptoCampBackgroundPainter extends CustomPainter{
       ..lineTo(sizing.getValue(86.5), 0)
       ..arcToPoint(Offset(size.width, sizing.getValue(148)), radius: Radius.circular(sizing.getValue(122.5)), clockwise: false)
       ..close();
-    
+
     canvas.drawPath(path, paint);
     canvas.save();
     canvas.restore();
-    
+
     path.reset();
     path.moveTo(size.width, sizing.getValue(176.33));
     path.arcToPoint(Offset(sizing.getValue(58.17), 0), radius: Radius.circular(sizing.getValue(153)));
@@ -92,7 +233,7 @@ class CryptoCampBackgroundPainter extends CustomPainter{
     canvas.save();
     canvas.restore();
   }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     // TODO: implement shouldRepaint
@@ -100,51 +241,69 @@ class CryptoCampBackgroundPainter extends CustomPainter{
   }
 }
 
-class MenuItem extends StatefulWidget{
-  final String routeName;
-  final String titleItem;
-  final TextStyle styleItem;
-  final double countEvent;
+class UserSection extends StatelessWidget{
+  final String userName;
+  final DateTime lastLoggedDate;
 
-  const MenuItem({Key key, this.routeName, this.titleItem, this.styleItem, this.countEvent}) : super(key: key);
-  @override
-  _MenuItemState createState() => _MenuItemState(routeName, titleItem, styleItem, countEvent);
-}
-
-class _MenuItemState extends State<MenuItem>{
-  final String routeName;
-  final String titleItem;
-  final TextStyle styleItem;
-  final double countEvent;
-
-  _MenuItemState(this.routeName, this.titleItem, this.styleItem, this.countEvent);
-  @override
+  const UserSection({Key key, this.userName, this.lastLoggedDate}) : super(key: key);@override
   Widget build(BuildContext context) {
     // TODO: implement build
-    return Row(children: [
-      RichText(
-        text: TextSpan(
-          text: titleItem,
-          style: styleItem,
-          recognizer: TapGestureRecognizer()
-            ..onTap = () {
-              Navigator.pushNamed(context, routeName);
-            },
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(7)),
+              child: Image(
+                image: AssetImage("resource/images/ava.jpg"),
+                height: 45,
+                width: 45,
+              ),
+            ),
+            SizedBox(width: 10,),
+            SizedBox(
+              height: 46,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    userName,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Color.fromRGBO(184, 191, 207, 1)
+                    ),
+                  ),
+                  Spacer(),
+                  Text(
+                    "Last logged in " + lastLoggedDate.day.toString() + "/" +
+                      lastLoggedDate.month.toString() + "/" +
+                        lastLoggedDate.year.toString(),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Color.fromRGBO(107, 130, 141, 1)
+                    ),
+                  )
+                ],
+              ),
+            ),
+            Spacer(),
+            RichText(text: TextSpan(
+              text: "LOG OUT",
+              style: TextStyle(
+                fontSize: 14,
+                color: Color.fromRGBO(184, 191, 207, 1),
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = (){
+                  Navigator.pushNamed(context, "/sign_in");
+                }
+            ))
+          ],
         ),
-      ),
-      Container(
-        width: 10,
-        height: 5,
-        margin: EdgeInsets.only(left: -5, top: -10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(2)),
-          color: Color.fromRGBO(0, 215, 235, 1)
-        ),
-        child: Text(
-          countEvent.toString(),
-          style: TextStyle(fontSize: 3, color: Colors.white),
-        ),
-      )
-    ]);
+        SizedBox(height: 5,),
+        Container(height: 3, color: Color.fromRGBO(17, 70, 110, 1))
+      ],
+    );
   }
 }

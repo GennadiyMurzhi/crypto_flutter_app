@@ -3,12 +3,14 @@
 import 'dart:math';
 
 import 'package:crypto_flutter_app/crypto_app_icons_icons.dart';
+import 'package:crypto_flutter_app/crypto_camp_screen.dart';
 import 'package:crypto_flutter_app/currency_chart.dart';
 import 'package:crypto_flutter_app/logo.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'SizingTool.dart';
+import 'data_exemple.dart';
 
 class DashboardScreen extends StatefulWidget{
   @override
@@ -21,10 +23,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // TODO: implement build
     Sizing.setSize(Size(
         MediaQuery.of(context).size.width, MediaQuery.of(context).size.height));
-
-
     Sizing sizing = Sizing().getInstence();
-    print(sizing.getValue(15).toString() + " " + sizing.getValue(20).toString() + " " + sizing.getValue(10).toString());
+
     return Scaffold(
       backgroundColor: Color.fromRGBO(245, 245, 245, 1),
       body: ListView(
@@ -84,12 +84,7 @@ class DashboardTopSection extends StatelessWidget{
               ),
             ),
             Expanded(child: Container()),
-            IconButton(
-              iconSize: 34,
-              alignment: Alignment.centerRight,
-              padding: EdgeInsets.all(0),
-              icon: Icon(Icons.menu),
-            )
+            MenuButton()
           ]),
           Padding(
             padding: EdgeInsets.only(top: 11, bottom: 10),
@@ -152,6 +147,25 @@ class DashboardTopSection extends StatelessWidget{
       else finishString = stringNumber[quantityIterations - i] + finishString;
     }
     return finishString;
+  }
+}
+
+class MenuButton extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return IconButton(
+      iconSize: 34,
+      alignment: Alignment.centerRight,
+      padding: EdgeInsets.all(0),
+      icon: Icon(Icons.menu),
+      onPressed: (){
+        Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context)=> CryptoCampScreen())
+        );
+      },
+    );
   }
 }
 
@@ -249,6 +263,7 @@ class ActivitySection extends StatelessWidget{
           ListView.builder(
             shrinkWrap: true,
             itemCount: lastThreeEvents.length,
+            physics: NeverScrollableScrollPhysics(),
             itemBuilder: (_, index) => lastThreeEvents[index],
           )
         ],
@@ -532,7 +547,7 @@ class LitecoinSection extends StatelessWidget{
               height: 100,
               width: double.maxFinite,
               padding: EdgeInsets.only(top: 20),
-              child: CurrencyChart(),
+              child: CurrencyChart(DataExemple().dataCurrency)
             ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 17),
