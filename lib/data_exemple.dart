@@ -1,18 +1,37 @@
 import 'dart:math';
 
+import 'dart:ui';
+
 class DataExemple {
 
   static DataExemple _dataExemple = DataExemple();
 
   static List<double> _dataCurrencyExemple = List(30);
 
-  static List<double> _dataCurrency3m; //3 month 129 600
-  static List<double> _dataCurrency1m; //1 month 43 200
-  static List<double> _dataCurrency1w; //1 weak 10 080
-  static List<double> _dataCurrency2d; //2 day 2880
-  static List<double> _dataCurrency24h; //24 hour 1440
-  static List<double> _dataCurrency12h; //12 hour 720
-  static List<double> _dataCurrency1h; //1 hour 60
+  static List<double> _dataCurrency3m;
+  static List<double> _dataCurrency1m;
+  static List<double> _dataCurrency1w;
+  static List<double> _dataCurrency2d;
+  static List<double> _dataCurrency24h;
+  static List<double> _dataCurrency12h;
+  static List<double> _dataCurrency1h;
+
+  static List<String> nameCurrency = [
+    "Ripple", "Bitcoin", "Cardano"
+  ];
+
+  static Map<String, Color> currencyColor = {
+    "Ripple" : Color.fromRGBO(250, 200, 209, 1),
+    "Bitcoin" : Color.fromRGBO(121, 140, 205, 1),
+    "Cardano" : Color.fromRGBO(126, 201, 213, 1)
+  };
+
+
+  static List<int> exemplePercentValue = List.generate(nameCurrency.length,
+          (index) => Random().nextInt(100));
+
+  static Map<String, int> currencyPercentValue = Map.fromIterables(nameCurrency,
+      exemplePercentValue);
 
   static final List<List<double>> dataList = [
     _dataCurrency1h,

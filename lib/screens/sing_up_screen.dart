@@ -1,10 +1,10 @@
 
 import 'package:crypto_flutter_app/logo.dart';
-import 'package:crypto_flutter_app/sign_in_screen.dart';
+import 'package:crypto_flutter_app/screens/sign_in_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'SizingTool.dart';
+import '../SizingTool.dart';
 
 class SingUpScreen extends StatefulWidget{
   

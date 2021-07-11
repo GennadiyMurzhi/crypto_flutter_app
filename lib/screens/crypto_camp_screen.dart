@@ -2,20 +2,20 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-import 'SizingTool.dart';
+import '../SizingTool.dart';
 
 class CryptoCampScreen extends StatelessWidget{
 
   String userName = "Aurelijus Yen";
   DateTime lastLoggedDate = DateTime(2021,3,14);
 
-  List<CryptoCampItem> menuItems = [
+  List<CryptoCampItem> menuItems = [   // while there is no screens there will be a dashboard
     CryptoCampItem("Dashboard", "/", 0),
-    CryptoCampItem("Buy/Sell", "/buy_sell", 0),
+    CryptoCampItem("Buy/Sell", "/testForm", 0),
     CryptoCampItem("Traders", "/traders", 0),
-    CryptoCampItem("My Wallets", "/my_wallets", 5),
-    CryptoCampItem("Orders", "/orders", 0),
-    CryptoCampItem("Converter", "/converter", 0),
+    CryptoCampItem("My Wallets", "/", 5),
+    CryptoCampItem("Orders", "/", 0),
+    CryptoCampItem("Converter", "/", 0),
   ];
 
   TextStyle style = TextStyle(
@@ -136,7 +136,7 @@ class MenuItem extends StatelessWidget{
           style: styleItem,
           recognizer: TapGestureRecognizer()
             ..onTap = () {
-              Navigator.pushNamed(context, routeName);
+              Navigator.of(context).pushNamed(routeName);
             },
         ),
       ),

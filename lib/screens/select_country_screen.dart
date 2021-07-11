@@ -1,12 +1,12 @@
 
 import 'package:crypto_flutter_app/crypto_app_icons_icons.dart';
 import 'package:crypto_flutter_app/logo.dart';
-import 'package:crypto_flutter_app/sign_in_screen.dart';
-import 'package:crypto_flutter_app/sing_up_screen.dart';
+import 'package:crypto_flutter_app/screens/sign_in_screen.dart';
+import 'package:crypto_flutter_app/screens/sing_up_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'SizingTool.dart';
+import '../SizingTool.dart';
 
 class SelectCountryScreen extends StatefulWidget{
   @override

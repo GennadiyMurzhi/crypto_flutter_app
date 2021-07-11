@@ -3,14 +3,14 @@
 import 'dart:math';
 
 import 'package:crypto_flutter_app/crypto_app_icons_icons.dart';
-import 'package:crypto_flutter_app/crypto_camp_screen.dart';
+import 'package:crypto_flutter_app/screens/crypto_camp_screen.dart';
 import 'package:crypto_flutter_app/currency_chart.dart';
 import 'package:crypto_flutter_app/logo.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'SizingTool.dart';
-import 'data_exemple.dart';
+import '../SizingTool.dart';
+import '../data_exemple.dart';
 
 class DashboardScreen extends StatefulWidget{
   @override
@@ -18,12 +18,29 @@ class DashboardScreen extends StatefulWidget{
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+
+  List<double> _dataCurrency;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    DataExemple.createData();
+    _dataCurrency = DataExemple.dataList[3];
+  }
+
+  @override
+  void dispose(){
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
     Sizing.setSize(Size(
         MediaQuery.of(context).size.width, MediaQuery.of(context).size.height));
     Sizing sizing = Sizing().getInstence();
+
 
     return Scaffold(
       backgroundColor: Color.fromRGBO(245, 245, 245, 1),
@@ -38,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   IOTASection(),
                   Padding(
                       padding: EdgeInsets.only(top: 10),
-                      child: LitecoinSection(),
+                      child: LitecoinSection(dataCurrency: _dataCurrency),
                   )
                 ]
             )
@@ -160,10 +177,7 @@ class MenuButton extends StatelessWidget{
       padding: EdgeInsets.all(0),
       icon: Icon(Icons.menu),
       onPressed: (){
-        Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context)=> CryptoCampScreen())
-        );
+        Navigator.of(context).pushNamed("/crypto_camp");
       },
     );
   }
@@ -464,6 +478,8 @@ class IOTASection extends StatelessWidget{
 
 class LitecoinSection extends StatelessWidget{
 
+  final List<double> dataCurrency;
+
   TextStyle styleUp = TextStyle(
       color: Colors.black,
       fontWeight: FontWeight.bold,
@@ -473,6 +489,8 @@ class LitecoinSection extends StatelessWidget{
       color: Colors.grey[600],
       fontSize: 12
   );
+
+  LitecoinSection({Key key, this.dataCurrency}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -547,7 +565,7 @@ class LitecoinSection extends StatelessWidget{
               height: 100,
               width: double.maxFinite,
               padding: EdgeInsets.only(top: 20),
-              child: CurrencyChart(DataExemple().dataCurrency)
+              child: CurrencyChart(dataCurrency)
             ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 17),

@@ -22,7 +22,6 @@ class CurrencyChart extends StatelessWidget{
       ]
     );
   }
-
 }
 
 class DetailCurrencyChart extends StatefulWidget{
@@ -124,14 +123,6 @@ class MakeCurrencyPath {
 
   var _path = Path();
 
-  double _stepChart;
-  Offset _startFirstArc;
-  Offset _endFirstArc;
-  Offset _startSecondArc;
-  Offset _endSecondArc;
-  double _oddsPoints;
-  bool _clockwiseArc;
-
   Path makePath (List<double> dataCurrency, double widthContainer){
     double step = getStep(dataCurrency, widthContainer);
     Path path = Path();
@@ -159,24 +150,13 @@ class MakeCurrencyPath {
   void _addPartCurrencyPath(Path path, double stepChart, double step,
       double positionCurrency, double lastPositionCurrency,
       {double futurePositionCurrency}){
-    _oddsPoints  = positionCurrency - lastPositionCurrency;
-    if(_oddsPoints>0) _clockwiseArc = true; else _clockwiseArc = false;
-    _startFirstArc = Offset(stepChart - step, lastPositionCurrency);
-    _endFirstArc = Offset(stepChart - step/2, lastPositionCurrency + _oddsPoints/6);
-    _startSecondArc = Offset(stepChart - step/2, positionCurrency - _oddsPoints/6);
-    _endSecondArc = Offset(stepChart, positionCurrency);
 
-    if(futurePositionCurrency == null) path.arcToPoint(_endFirstArc,
-        radius: Radius.circular(_oddsPoints/4), clockwise: _clockwiseArc);
-    else if(positionCurrency > futurePositionCurrency)
-      path.arcToPoint(_endFirstArc, radius: Radius.circular(_oddsPoints/4), clockwise: _clockwiseArc);
-    else path.arcToPoint(_endFirstArc, radius: Radius.circular(_oddsPoints/4), clockwise: _clockwiseArc);
-    path.lineTo(_startSecondArc.dx, _startSecondArc.dy);
-    if(futurePositionCurrency == null) path.arcToPoint(_endSecondArc,
-        radius: Radius.circular(_oddsPoints/2), clockwise: !_clockwiseArc);
-    else if(positionCurrency > futurePositionCurrency)
-      path.arcToPoint(_endSecondArc, radius: Radius.circular(_oddsPoints/4), clockwise: !_clockwiseArc);
-    else path.arcToPoint(_endSecondArc, radius: Radius.circular(_oddsPoints/4), clockwise: !_clockwiseArc);
+    Offset controlOne = Offset(stepChart - step + step/1.5, lastPositionCurrency);
+    Offset controlTwo = Offset(stepChart - step/1.5, positionCurrency);
+    Offset endSegment = Offset(stepChart, positionCurrency);
+
+    path.cubicTo(controlOne.dx, controlOne.dy, controlTwo.dx, controlTwo.dy,
+        endSegment.dx, endSegment.dy);
   }
 }
 
@@ -299,15 +279,20 @@ class CurrencyChartDetailPainter extends CurrencyChartPainter{
       drawBackgroundCircle(canvas, rightCurrencyPoint, 3);
     }
 
-    if(_leftPoint != null && _rightPoint != null){ //рисуем кривые
+    if(_leftPoint != null && _rightPoint != null){
       List<int> vertices = getVertices(indexLeftPoint, indexRightPoint);
       if(vertices.length == 4){
-        drawContactBlueCurve(canvas, indexLeftPoint, indexRightPoint, vertices[0],
-            vertices[3], size);
-        drawContactOrangeCurve(canvas, indexLeftPoint, indexRightPoint,
-            vertices[0], vertices[2], vertices[3], size);
-        /*drawContactLightBlueCurve(canvas, indexLeftPoint, indexRightPoint,
-            vertices[1], vertices[2], size.width);*/
+        //orangeCurve
+        drawCurve(canvas, indexLeftPoint, indexRightPoint, vertices[0],
+            vertices[2], size, Color.fromRGBO(244, 71, 109, 1.0));
+        //blue curve
+        drawCurve(canvas, indexLeftPoint, indexRightPoint, vertices[0],
+            vertices[3], size, Color.fromRGBO(55, 107, 207, 1.0));
+
+        //lightBlueCurve
+        drawCurve(canvas, indexLeftPoint, indexRightPoint, vertices[1],
+            vertices[2], size, Color.fromRGBO(48, 180, 211, 1));/**/
+
       }
     }
 
@@ -351,12 +336,13 @@ class CurrencyChartDetailPainter extends CurrencyChartPainter{
     canvas.drawCircle(currencyPoint, strokeWidth * 2, paintStroke);
   }
 
-  void drawContactBlueCurve(Canvas canvas, int indexLeftPoint, int indexRightPoint,
-      int indexFirstVertex, int indexFourthVertex, Size sizeContainer){
+  void drawCurve(Canvas canvas, int indexLeftPoint, int indexRightPoint,
+      int indexFirstVertex, int indexSecondVertex, Size sizeContainer, Color color){
+
     var paint = Paint()
-        ..color = Color.fromRGBO(55, 107, 207, 1)
+        ..color = color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
+        ..strokeWidth = 2.5;
 
     double step = getStep(dataCurrency, sizeContainer.width);
     //(absciss or ordinat control point design *100 / widthSpline design) / 100
@@ -366,27 +352,68 @@ class CurrencyChartDetailPainter extends CurrencyChartPainter{
     double segmentWidth = (indexFirstVertex - indexLeftPoint) * step;
     double percentSegment1 = segmentWidth * 100 / sizeContainer.width; //percent of Segment1 of Container
 
-    //spline 1
-    Offset controlOne = Offset(
-        indexLeftPoint * step + percentSegment1 * 0.4375,
-        dataCurrency[indexLeftPoint] + percentSegment1 * 1.0842);
+          //**************************SEGMENT 1**************************//
+    Offset controlOne;
+    if ((dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]).abs() >=
+            30 &&
+        indexFirstVertex - indexLeftPoint >= 11) //case5
+      controlOne = Offset(indexLeftPoint * step + percentSegment1 * 0.4375 * 2,
+          dataCurrency[indexLeftPoint] + percentSegment1 * 1.0842 / 2.5);
+    else if (dataCurrency[indexLeftPoint] <= 15 &&
+        dataCurrency[indexFirstVertex] <= 15 &&
+        indexFirstVertex - indexLeftPoint >= 8) //case6
+      controlOne = Offset(indexLeftPoint * step + percentSegment1 * 0.4375 * 3.5,
+          dataCurrency[indexLeftPoint] - percentSegment1 * 1.0842 / 3.5);
+    else
+      controlOne = Offset(indexLeftPoint * step + percentSegment1 * 0.4375,
+          dataCurrency[indexLeftPoint] + percentSegment1 * 1.0842);
+    //                               NEXT                                  //
+    //                              CONTROL                                //
+    //                               POINT                                 //
     Offset controlTwo;
-    if(dataCurrency[indexLeftPoint] > dataCurrency[indexFirstVertex] &&
-        dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]
-            > (dataCurrency.reduce(max) + dataCurrency.reduce(min)) / 2 &&
-        indexFirstVertex - indexLeftPoint < 3)
-      controlTwo = Offset(
-          indexLeftPoint * step + percentSegment1 * 1.9527,
+    if (dataCurrency[indexLeftPoint] <= 15 &&
+        dataCurrency[indexFirstVertex] <= 15 &&
+        indexFirstVertex - indexLeftPoint >= 8) //case6
+      controlTwo = Offset(indexLeftPoint * step + percentSegment1 * 0.7527,
+          dataCurrency[indexLeftPoint] + percentSegment1 * 1.575);
+    else if ((dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]).abs() <=
+            20 &&
+        indexFirstVertex - indexLeftPoint >= 6 &&
+        indexFirstVertex - indexLeftPoint <= 10) // case1
+      controlTwo = Offset(indexLeftPoint * step + percentSegment1 * 2.7527,
+          dataCurrency[indexLeftPoint] - percentSegment1 * 0.875);
+    else if ((dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex])
+                .abs() >=
+            20 &&
+        (dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]).abs() <=
+            60 &&
+        indexFirstVertex - indexLeftPoint >= 5 &&
+        indexFirstVertex - indexLeftPoint <= 9) //case2
+      controlTwo = Offset(indexLeftPoint * step + percentSegment1 * 1.9727,
+          dataCurrency[indexLeftPoint] - percentSegment1 * 1.875);
+    else if((dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex])
+        .abs() >=
+        40 &&
+        indexFirstVertex - indexLeftPoint >= 2 &&
+        indexFirstVertex - indexLeftPoint <= 5) //case3
+      controlTwo = Offset(indexLeftPoint * step + percentSegment1 * 1.7527,
+          dataCurrency[indexLeftPoint] - percentSegment1 * 3.575);
+    else if((dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex])
+        .abs() <=
+        40 &&
+        indexFirstVertex - indexLeftPoint <= 2) //case4
+      controlTwo = Offset(indexLeftPoint * step + percentSegment1 * 0.7527,
+          dataCurrency[indexLeftPoint] - percentSegment1 * 1.575);
+    else if((dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex])
+        .abs() >=
+        30 &&
+        indexFirstVertex - indexLeftPoint >= 11) //case5
+      controlTwo = Offset(indexLeftPoint * step + percentSegment1 * 2.2527,
           dataCurrency[indexLeftPoint] - percentSegment1 * 0.575);
-    else if(dataCurrency[indexLeftPoint]<dataCurrency[indexFirstVertex])
-      controlTwo = Offset(
-          indexLeftPoint * step + percentSegment1 * 0.7527,
-          dataCurrency[indexLeftPoint] - percentSegment1 * 0.875
-      );
-    else controlTwo = Offset(
-        indexLeftPoint * step + percentSegment1 * 0.7527,
-        dataCurrency[indexLeftPoint] + percentSegment1 * 0.875
-    );
+    else
+      controlTwo = Offset(indexLeftPoint * step + percentSegment1 * 0.7527,
+          dataCurrency[indexLeftPoint] + percentSegment1 * 0.875);
+
     Offset endPoint = Offset(indexFirstVertex * step,
         dataCurrency[indexFirstVertex]);
 
@@ -395,81 +422,261 @@ class CurrencyChartDetailPainter extends CurrencyChartPainter{
         controlTwo.dx, controlTwo.dy, // control two
         endPoint.dx, endPoint.dy
     );
-    //spline 2
-    segmentWidth = (indexFourthVertex - indexFirstVertex) * step;
+
+          //**************************SEGMENT 2**************************//
+    segmentWidth = (indexSecondVertex - indexFirstVertex) * step;
     double percentSegment2 = segmentWidth * 100 / sizeContainer.width; //percent of Segment2 of Container
     Offset differenceValues = Offset(endPoint.dx - controlTwo.dx,
         endPoint.dy - controlTwo.dy);
-    /*if(dataCurrency[indexFirstVertex] > dataCurrency[indexFourthVertex])
-      controlOne = Offset(endPoint.dx + differenceValues.dx,
-          endPoint.dy + differenceValues.dy);
+
+    if ((dataCurrency[indexFirstVertex] -
+        dataCurrency[indexSecondVertex]).abs() <= 20 &&
+        indexSecondVertex - indexFirstVertex <= 4) // case1
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 10,
+          endPoint.dy + differenceValues.dy / 10);
+    else if ((dataCurrency[indexFirstVertex] - dataCurrency[indexSecondVertex])
+        .abs() <=
+        20 &&
+        indexSecondVertex - indexFirstVertex >= 7 &&
+        indexSecondVertex - indexFirstVertex <= 16) //case3
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 3.5,
+          endPoint.dy + differenceValues.dy / 7);
+    else if ((dataCurrency[indexFirstVertex] - dataCurrency[indexSecondVertex])
+        .abs() <=
+        10 &&
+        indexSecondVertex - indexFirstVertex >= 2 &&
+        indexSecondVertex - indexFirstVertex <= 6) //case4
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 5,
+          endPoint.dy + differenceValues.dy / 7);
+    else if (dataCurrency[indexFirstVertex] <= 10 &&
+        dataCurrency[indexSecondVertex] <= 10 &&
+        indexSecondVertex - indexFirstVertex >= 10 &&
+        indexSecondVertex - indexFirstVertex <= 14) //case5
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 2.5,
+          endPoint.dy + differenceValues.dy / 2.5);
+    else if ((dataCurrency[indexFirstVertex] -
+        dataCurrency[indexSecondVertex]).abs() >= 20 &&
+        indexSecondVertex - indexFirstVertex <= 4) // case6
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 5,
+          endPoint.dy + differenceValues.dy / 12);
+    else if ((dataCurrency[indexFirstVertex] -
+        dataCurrency[indexSecondVertex]).abs() <= 20 &&
+        indexSecondVertex - indexFirstVertex >= 5 &&
+        indexSecondVertex - indexFirstVertex <= 12) //case7
+      controlOne = Offset(endPoint.dx + differenceValues.dx * 1.7,
+          endPoint.dy + differenceValues.dy / 2);
+    else if ((dataCurrency[indexFirstVertex] -
+        dataCurrency[indexSecondVertex]).abs() <= 20 &&
+        indexSecondVertex - indexFirstVertex >= 12) //case8
+      controlOne = Offset(endPoint.dx + differenceValues.dx * 0.7,
+          endPoint.dy + differenceValues.dy / 1.5);
     else controlOne = Offset(endPoint.dx + differenceValues.dx,
-        endPoint.dy + differenceValues.dy);
-    print("difference currency "+(dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]).toString());
-    print("difference indexes indexFirstVertex - indexLeftPoint "+(indexFirstVertex - indexLeftPoint).toString());
-    print("average currency "+((dataCurrency.reduce(max)
-        + dataCurrency.reduce(min)) / 2).toString());*/
-    if(dataCurrency[indexLeftPoint] > dataCurrency[indexFirstVertex] &&
-        dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]
-            > (dataCurrency.reduce(max) + dataCurrency.reduce(min)) / 2 &&
-        indexFirstVertex - indexLeftPoint > 5)
-      controlOne = Offset(endPoint.dx + percentSegment1 * 1.3527,
-        endPoint.dy - percentSegment1 * 1.175);
-    else if(dataCurrency[indexLeftPoint] > dataCurrency[indexFirstVertex] &&
-        dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]
-            > (dataCurrency.reduce(max) + dataCurrency.reduce(min)) / 2 &&
-        indexFirstVertex - indexLeftPoint < 5 &&
-        indexFirstVertex - indexLeftPoint > 2)
-      controlOne = Offset(endPoint.dx + percentSegment1 * 2.1527,
-        endPoint.dy - percentSegment1 * 2.575);
-    else if(dataCurrency[indexLeftPoint] > dataCurrency[indexFirstVertex] &&
-        dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]
-            > (dataCurrency.reduce(max) + dataCurrency.reduce(min)) / 2 &&
-        indexFirstVertex - indexLeftPoint < 3)
-      controlOne = Offset(endPoint.dx + percentSegment1 * 3.1527,
-          endPoint.dy - percentSegment1 * 5.575);
-    else if(dataCurrency[indexLeftPoint] > dataCurrency[indexFirstVertex] &&
-        dataCurrency[indexLeftPoint] - dataCurrency[indexFirstVertex]
-            < (dataCurrency.reduce(max) + dataCurrency.reduce(min)) / 2 &&
-        indexFirstVertex - indexLeftPoint < 3)
-      controlOne = Offset(endPoint.dx + percentSegment1 * 9.1527,
-          endPoint.dy - percentSegment1 * 11.575);
-    else controlOne = Offset(endPoint.dx + differenceValues.dx,
           endPoint.dy + differenceValues.dy);
-    if(indexRightPoint - indexFourthVertex == 1 &&
-        (dataCurrency[indexRightPoint] - dataCurrency[indexFourthVertex]).abs()
-            < (dataCurrency.reduce(max) + dataCurrency.reduce(min)) / 4)
-    controlTwo = Offset(indexFirstVertex * step + percentSegment2 * 1.9595,
-        dataCurrency[indexFirstVertex] + percentSegment2 * 1.0080);
-    else controlTwo = Offset(indexFirstVertex * step + percentSegment2 * 1.9595,
-        dataCurrency[indexFirstVertex] + percentSegment2 * 1.4080);
-    endPoint = Offset(indexFourthVertex * step,
-        dataCurrency[indexFourthVertex]);
+    //                               NEXT                                  //
+    //                              CONTROL                                //
+    //                               POINT                                 //
+    if ((dataCurrency[indexFirstVertex] - dataCurrency[indexSecondVertex])
+                .abs() >=
+            21 &&
+        (dataCurrency[indexFirstVertex] - dataCurrency[indexSecondVertex])
+            .abs() <=
+            31 &&
+        indexSecondVertex - indexFirstVertex >= 7 &&
+        indexSecondVertex - indexFirstVertex <= 11) //case2
+      controlTwo = Offset(endPoint.dx + percentSegment2 * 2.9595,
+          endPoint.dy + percentSegment2 * 1.0080);
+    else if (dataCurrency[indexFirstVertex] <= 10 &&
+        dataCurrency[indexSecondVertex] <= 10 &&
+        indexSecondVertex - indexFirstVertex >= 10 &&
+        indexSecondVertex - indexFirstVertex <= 14) //case5
+      controlTwo = Offset(endPoint.dx + percentSegment2 * 0.7595,
+          endPoint.dy + percentSegment2 * 1.5080);
+    else if ((dataCurrency[indexFirstVertex] - dataCurrency[indexSecondVertex])
+        .abs() <=
+        20 &&
+        indexSecondVertex - indexFirstVertex >= 7 &&
+        indexSecondVertex - indexFirstVertex <= 16) //case3
+      controlTwo = Offset(endPoint.dx + percentSegment2 * 0.1595,
+          endPoint.dy + percentSegment2 * 2.5080);
+    else if ((dataCurrency[indexFirstVertex] - dataCurrency[indexSecondVertex])
+        .abs() <=
+        10 &&
+        indexSecondVertex - indexFirstVertex >= 2 &&
+        indexSecondVertex - indexFirstVertex <= 6) //case4
+      controlTwo = Offset(endPoint.dx + percentSegment2 * 0.1595,
+          endPoint.dy + percentSegment2 * 0.9080);
+    else if ((dataCurrency[indexFirstVertex] -
+        dataCurrency[indexSecondVertex]).abs() >= 20 &&
+        indexSecondVertex - indexFirstVertex <= 4) // case6
+      controlTwo = Offset(endPoint.dx + percentSegment2 * 0.9595,
+          endPoint.dy + percentSegment2 * 1.9080);
+    else if ((dataCurrency[indexFirstVertex] -
+        dataCurrency[indexSecondVertex]).abs() <= 20 &&
+        indexSecondVertex - indexFirstVertex >= 12) //case8
+      controlTwo = Offset(endPoint.dx + percentSegment2 * 1.9595,
+          endPoint.dy + percentSegment2 * 1.4080);
+    else
+      controlTwo = Offset(endPoint.dx + percentSegment2 * 1.9595,
+          endPoint.dy + percentSegment2 * 1.4080);
+
+    endPoint = Offset(indexSecondVertex * step,
+        dataCurrency[indexSecondVertex]);
+
     path.cubicTo(
         controlOne.dx, controlOne.dy, //control one
-        controlTwo.dx, controlTwo.dy,// control two
+        controlTwo.dx, controlTwo.dy, // control two
         endPoint.dx, endPoint.dy
     );
-    //spline 3
-    segmentWidth = (indexRightPoint - indexFourthVertex) * step;
+
+          //**************************SEGMENT 3**************************//
+    segmentWidth = (indexRightPoint - indexSecondVertex) * step;
     double percentSegment3 = segmentWidth * 100 / sizeContainer.width; //percent of Segment2 of Container
     differenceValues = Offset(endPoint.dx - controlTwo.dx,
         endPoint.dy - controlTwo.dy);
-    /*print("difference indexes indexRightPoint - indexFourthVertex "+(indexRightPoint - indexFourthVertex).toString());
-    print("difference currency "+(dataCurrency[indexRightPoint] - dataCurrency[indexFourthVertex]).toString());*/
-    if(indexRightPoint - indexFourthVertex == 1)
-      controlOne = Offset(endPoint.dx + percentSegment3 * 0.9595,
-          endPoint.dy - percentSegment3 * 0.3580);
-    else if(indexRightPoint - indexFourthVertex > 5)
-      controlOne = Offset(endPoint.dx + percentSegment3 * 0.3595,
-        endPoint.dy - percentSegment3 * 0.2080);
-    else controlOne = Offset(endPoint.dx + percentSegment3 * 1.9595,
-        endPoint.dy - percentSegment3 * 1.4080);
-    if(dataCurrency[indexFourthVertex] > dataCurrency[indexRightPoint])
-        controlTwo = Offset(indexFourthVertex * step + percentSegment3 * 2.8277,
-            dataCurrency[indexFourthVertex] + percentSegment3 * 1.7722);
-    else controlTwo = Offset(indexFourthVertex * step + percentSegment3 * 2.8277,
-        dataCurrency[indexFourthVertex] - percentSegment3 * 1.7722);
+
+    if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+                .abs() <=
+            20 &&
+        indexRightPoint - indexSecondVertex <= 4) // case2
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 17,
+          endPoint.dy + differenceValues.dy / 13);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        21 &&
+        (dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+            .abs() <=
+            41 &&
+        indexRightPoint - indexSecondVertex >= 3 &&
+        indexRightPoint - indexSecondVertex <= 4) // case3
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 5,
+          endPoint.dy + differenceValues.dy / 5);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+                .abs() <=
+            20 &&
+        indexRightPoint - indexSecondVertex >= 5 &&
+        indexRightPoint - indexSecondVertex <= 9) // case4
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 3,
+          endPoint.dy + differenceValues.dy / 3);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        42 &&
+        indexRightPoint - indexSecondVertex <= 4) // case5
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 7,
+          endPoint.dy + differenceValues.dy / 23);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        21 &&
+        (dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+            .abs() <=
+            41 &&
+        indexRightPoint - indexSecondVertex >= 5 &&
+        indexRightPoint - indexSecondVertex <= 9) // case6
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 2.7,
+          endPoint.dy + differenceValues.dy / 4.3);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        42 &&
+        indexRightPoint - indexSecondVertex >= 5 &&
+        indexRightPoint - indexSecondVertex <= 9) // case7
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 3.7,
+          endPoint.dy + differenceValues.dy / 4.3);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        21 &&
+        (dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+            .abs() <=
+            41 &&
+        indexRightPoint - indexSecondVertex == 2) // case8
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 5,
+          endPoint.dy + differenceValues.dy / 5);
+    else if (dataCurrency[indexSecondVertex] <= 15 &&
+            indexRightPoint - indexSecondVertex >= 10 ||
+        dataCurrency[indexRightPoint] <= 15 &&
+            indexRightPoint - indexSecondVertex >= 10) // case9
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 2,
+          endPoint.dy + differenceValues.dy / 7);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        21 &&
+        (dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+            .abs() <=
+            41 &&
+        indexRightPoint - indexSecondVertex == 1) // case10
+      controlOne = Offset(endPoint.dx + differenceValues.dx / 10,
+          endPoint.dy + differenceValues.dy / 10);
+    else
+      controlOne = Offset(
+          endPoint.dx + differenceValues.dx, endPoint.dy + differenceValues.dy);
+
+    //                               NEXT                                  //
+    //                              CONTROL                                //
+    //                               POINT                                 //
+
+    if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+                .abs() <=
+            20 &&
+        indexRightPoint - indexSecondVertex <= 4) // case2
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 2.3277,
+          dataCurrency[indexSecondVertex] + percentSegment3 * 0.9722);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+                .abs() >=
+            21 &&
+        (dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+                .abs() <=
+            41 &&
+        indexRightPoint - indexSecondVertex >= 3 &&
+        indexRightPoint - indexSecondVertex <= 4) // case3
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 1.5277,
+          dataCurrency[indexSecondVertex] + percentSegment3 * 6.2722);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() <=
+        20 &&
+        indexRightPoint - indexSecondVertex >= 5 &&
+        indexRightPoint - indexSecondVertex <= 9) // case4
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 1.3277,
+          dataCurrency[indexSecondVertex] + percentSegment3 * 0.9722);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        42 &&
+        indexRightPoint - indexSecondVertex <= 4) // case5
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 1.5277,
+          dataCurrency[indexSecondVertex] + percentSegment3 * 2.2722);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        21 &&
+        (dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+            .abs() <=
+            41 &&
+        indexRightPoint - indexSecondVertex >= 5 &&
+        indexRightPoint - indexSecondVertex <= 9) // case6
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 1.7277,
+          dataCurrency[indexSecondVertex] + percentSegment3 * 2.2722);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        42 &&
+        indexRightPoint - indexSecondVertex >= 5 &&
+        indexRightPoint - indexSecondVertex <= 9) // case7
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 1.5277,
+          dataCurrency[indexSecondVertex] + percentSegment3 * 3.7722);
+    else if ((dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+        .abs() >=
+        21 &&
+        (dataCurrency[indexSecondVertex] - dataCurrency[indexRightPoint])
+            .abs() <=
+            41 &&
+        indexRightPoint - indexSecondVertex <= 2) // case8
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 1.0277,
+          dataCurrency[indexSecondVertex] + percentSegment3 * 9.2722);
+    else if (dataCurrency[indexSecondVertex] <= 15 &&
+        indexRightPoint - indexSecondVertex >= 10 ||
+        dataCurrency[indexRightPoint] <= 15 &&
+            indexRightPoint - indexSecondVertex >= 10) // case9
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 2.4277,
+        dataCurrency[indexSecondVertex] + percentSegment3 * 0.7722);
+    else
+      controlTwo = Offset(indexSecondVertex * step + percentSegment3 * 2.8277,
+          dataCurrency[indexSecondVertex] + percentSegment3 * 0.7722);
+
     endPoint = Offset(indexRightPoint * step,
         dataCurrency[indexRightPoint]);
     path.cubicTo(
@@ -477,148 +684,6 @@ class CurrencyChartDetailPainter extends CurrencyChartPainter{
         controlTwo.dx, controlTwo.dy,// control two
         endPoint.dx, endPoint.dy
     );
-    canvas.drawPath(path, paint);
-    canvas.save();
-    canvas.restore();
-  }
-
-  void drawContactOrangeCurve(Canvas canvas, int indexLeftPoint, int indexRightPoint,
-      int indexFirstVertex, int indexThirdVertex, int indexFourthVertex, Size sizeContainer){
-    var paint = Paint()
-      ..color = Color.fromRGBO(235, 187, 195, 1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    double step = getStep(dataCurrency, sizeContainer.width);
-
-    var path = Path()
-      ..moveTo(indexLeftPoint * step, dataCurrency[indexLeftPoint]);
-
-    double segmentWidth = (indexFirstVertex - indexLeftPoint) * step;
-    double percentSegment1 = segmentWidth * 100 / sizeContainer.width;
-
-    //segment 1
-    Offset controlOne = Offset(
-        indexLeftPoint * step + percentSegment1 * 0.6459 ,
-        dataCurrency[indexLeftPoint] + percentSegment1 * 1.4324 );
-    Offset controlTwo = Offset(
-        indexLeftPoint * step + percentSegment1 * 0.6648 ,
-        dataCurrency[indexLeftPoint] + percentSegment1 * 0.9702 );
-    Offset endPoint = Offset(indexFirstVertex * step,
-        dataCurrency[indexFirstVertex]);
-    path.cubicTo(
-        controlOne.dx, controlOne.dy, //control one
-        controlTwo.dx, controlTwo.dy,// control two
-        endPoint.dx, endPoint.dy
-    );
-    //segment 2
-    segmentWidth = (indexThirdVertex - indexFirstVertex) * step;
-    double percentSegment2 = segmentWidth * 100 / sizeContainer.width; //percent of Segment2 of Container
-    Offset differenceValues = Offset(endPoint.dx - controlTwo.dx,
-        endPoint.dy - controlTwo.dy);
-    controlOne = Offset(endPoint.dx + differenceValues.dx,
-        endPoint.dy + differenceValues.dy);
-    controlTwo = Offset(
-        endPoint.dx + percentSegment2 * 1.6296,
-        endPoint.dy + percentSegment2 * 2.1407 );
-    endPoint = Offset(indexThirdVertex * step,
-        dataCurrency[indexThirdVertex]);
-    path.cubicTo(
-        controlOne.dx, controlOne.dy, //control one
-        controlTwo.dx, controlTwo.dy,// control two
-        endPoint.dx, endPoint.dy
-    );
-
-    //segment 3
-    segmentWidth = (indexFourthVertex - indexThirdVertex) * step;
-    double percentSegment3= segmentWidth * 100 / sizeContainer.width;
-    if(indexFourthVertex - indexThirdVertex <= 2 &&
-        dataCurrency[indexFourthVertex] > dataCurrency[indexThirdVertex])
-      controlOne = Offset(endPoint.dx + (percentSegment3 * 1.9) * 1.6296,
-          endPoint.dy + (percentSegment3 * 0.5) * 2.1407);
-    else if(indexFourthVertex - indexThirdVertex <= 2 &&
-        dataCurrency[indexFourthVertex] < dataCurrency[indexThirdVertex])
-      controlOne = Offset(endPoint.dx + (percentSegment3 * 1.9) * 1.6296,
-          endPoint.dy - (percentSegment3 * 0.5) * 2.1407);
-    else if(dataCurrency[indexFourthVertex] > dataCurrency[indexThirdVertex])
-        controlOne = Offset(endPoint.dx + percentSegment3 * 1.6296,
-            endPoint.dy + percentSegment3 * 2.1407);
-    else controlOne = Offset(endPoint.dx + percentSegment3 * 1.6296,
-        endPoint.dy - percentSegment3 * 2.1407);
-
-    if(indexFourthVertex - indexThirdVertex <= 2 &&
-        dataCurrency[indexFourthVertex] > dataCurrency[indexThirdVertex])
-      controlTwo = Offset(indexFourthVertex * step - (percentSegment3 * 0.9)* 4.5 ,
-          dataCurrency[indexFourthVertex] - (percentSegment3 * 0.5)* 3.6686);
-    else if(indexFourthVertex - indexThirdVertex <= 2 &&
-        dataCurrency[indexFourthVertex] < dataCurrency[indexThirdVertex])
-      controlTwo = Offset(indexFourthVertex * step - (percentSegment3 * 0.9)* 4.5 ,
-          dataCurrency[indexFourthVertex] + (percentSegment3 * 0.5)* 3.6686);
-    else controlTwo = Offset(
-        endPoint.dx + (percentSegment3 - step)* 4.5 ,
-        endPoint.dy + (percentSegment3 - step)* 3.6686);
-    endPoint = Offset(indexFourthVertex * step,
-        dataCurrency[indexFourthVertex]);
-    path.cubicTo(
-        controlOne.dx, controlOne.dy, //control one
-        controlTwo.dx, controlTwo.dy,// control two
-        endPoint.dx, endPoint.dy
-    );
-
-    //segment 4
-    segmentWidth = (indexRightPoint - indexFourthVertex) * step;
-    double percentSegment4 = segmentWidth * 100 / sizeContainer.width;
-    if(indexRightPoint - indexFourthVertex > 9)
-      controlOne = Offset(endPoint.dx + (percentSegment4 - step * 2)  * 4.5,
-          endPoint.dy - (percentSegment4 - step * 3.5) * 3.6686);
-    else if(indexRightPoint - indexFourthVertex > 7)
-      controlOne = Offset(endPoint.dx + percentSegment4  * 4.5,
-          endPoint.dy - (percentSegment4 - step) * 3.6686);
-    else controlOne = Offset(endPoint.dx + percentSegment4  * 4.5,
-        endPoint.dy - percentSegment4 * 3.6686);
-
-    if(indexRightPoint - indexFourthVertex > 9)
-      controlTwo = Offset(endPoint.dx + percentSegment4 * 2.5378 ,
-          endPoint.dy + (percentSegment4 - step) * 1.3810 );
-    else if(indexRightPoint - indexFourthVertex > 7)
-      controlTwo = Offset(endPoint.dx + percentSegment4 * 2.5378 ,
-          endPoint.dy + percentSegment4 * 1.3810 );
-    else if(dataCurrency[indexFourthVertex] < dataCurrency[indexRightPoint])
-      controlTwo = Offset(endPoint.dx + percentSegment4 * 2.5378 ,
-          endPoint.dy + percentSegment4 * 1.3810 );
-    else controlTwo = Offset(endPoint.dx + percentSegment4 * 2.5378 ,
-        endPoint.dy - percentSegment4 * 1.3810 );
-    endPoint = Offset(indexRightPoint * step,
-        dataCurrency[indexRightPoint]);
-    path.cubicTo(
-        controlOne.dx, controlOne.dy, //control one
-        controlTwo.dx, controlTwo.dy,// control two
-        endPoint.dx, endPoint.dy
-    );
-
-    canvas.drawPath(path, paint);
-    canvas.save();
-    canvas.restore();
-  }
-  void drawContactLightBlueCurve(Canvas canvas, int indexLeftPoint, int indexRightPoint,
-      int indexSecondVertex, int indexThirdVertex, double widthContainer){
-    var paint = Paint()
-      ..color = Color.fromRGBO(48, 180, 211, 1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    double step = getStep(dataCurrency, widthContainer);
-
-    var path = Path()
-      ..moveTo(indexLeftPoint * step, dataCurrency[indexLeftPoint])
-      ..quadraticBezierTo(indexLeftPoint * step, dataCurrency[indexLeftPoint], indexSecondVertex * step,
-          dataCurrency[indexSecondVertex])
-      ..quadraticBezierTo(indexSecondVertex * step,
-          dataCurrency[indexSecondVertex], indexThirdVertex * step,
-          dataCurrency[indexThirdVertex])
-      ..quadraticBezierTo(indexThirdVertex * step,
-          dataCurrency[indexThirdVertex], indexRightPoint * step,
-          dataCurrency[indexRightPoint]);
 
     canvas.drawPath(path, paint);
     canvas.save();
@@ -634,9 +699,8 @@ class CurrencyChartDetailPainter extends CurrencyChartPainter{
       if (index > indexLeftPoint) vertices.add(index);
       copyData.removeAt(index);
       copyData.insert(index, double.infinity);
-      if(indexRightPoint - indexLeftPoint < 4
-          && vertices.length == indexRightPoint - indexLeftPoint - 1) break;
-      if (copyData[copyData.length - 1] == double.infinity && vertices.length == 4) break;
+      if (copyData[copyData.length - 1] == double.infinity &&
+          vertices.length == indexRightPoint - indexLeftPoint - 1) break;
     }
     vertices.sort();
 
